@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="基于 ZNBC Tokenizer 当前 Python 实现的本地可视化界面"
+    >
+    <title>Tokenizer 可视化实验室</title>
+    <link rel="stylesheet" href="/styles/system.css">
+    <link rel="stylesheet" href="/styles/bpe.css">
+    <link rel="stylesheet" href="/styles/encoder.css">
+    <link rel="stylesheet" href="/styles/decoder.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="shell topbar-inner">
+        <div class="brand">
+          <span class="eyebrow">ZNBC Tokenizer</span>
+          <h1>Tokenizer 可视化实验室</h1>
+          <p>BPE 构建词表，Encoder 按固定规则生成 int，Decoder 再把 int 还原为 string。</p>
+        </div>
+        <nav class="view-tabs" aria-label="可视化功能" role="tablist">
+          <button
+            id="bpe-tab"
+            class="view-tab is-active"
+            type="button"
+            role="tab"
+            aria-controls="bpe-view"
+            aria-selected="true"
+            data-view-target="bpe-view"
+          >BPE 构建</button>
+          <button
+            id="encoder-tab"
+            class="view-tab"
+            type="button"
+            role="tab"
+            aria-controls="encoder-view"
+            aria-selected="false"
+            tabindex="-1"
+            data-view-target="encoder-view"
+          >Encoder</button>
+          <button
+            id="decoder-tab"
+            class="view-tab"
+            type="button"
+            role="tab"
+            aria-controls="decoder-view"
+            aria-selected="false"
+            tabindex="-1"
+            data-view-target="decoder-view"
+          >Decoder</button>
+        </nav>
+      </div>
+    </header>
+
+    <main
+      id="bpe-view"
+      class="shell page-stack"
+      role="tabpanel"
+      aria-labelledby="bpe-tab"
+      data-tokenizer-view
+    >
+      <section class="panel controls-panel" aria-labelledby="controls-title">
+        <div class="panel-header">
+          <div>
+            <span class="section-index">01</span>
+            <h2 id="controls-title">用 BPE 构建 Tokenizer</h2>
+          </div>
+          <span id="source-label" class="source-label">等待连接 bpe.py</span>
+        </div>
+
+        <form id="bpe-form" class="control-grid">
+          <label class="field field-wide" for="corpus-input">
+            <span>训练样本</span>
+            <small>每行是一个独立 string，pair 不跨行统计。</small>
+            <textarea id="corpus-input" rows="4">banana bandana
+你好你好</textarea>
+          </label>
+
+          <label class="field" for="vocab-input">
+            <span>目标词表大小</span>
+            <small>包含最初的 256 个 byte token。</small>
+            <input id="vocab-input" type="number" min="256" max="1024" value="264">
+          </label>
+
+          <div class="form-actions">
+            <button id="run-button" class="button button-primary" type="submit">
+              训练 BPE
+            </button>
+            <span id="request-status" class="status-line" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+      </section>
+
+      <div id="error-message" class="alert" role="alert" hidden></div>
+
+      <div id="results" class="page-stack" hidden>
+        <section aria-labelledby="summary-title">
+          <div class="section-heading">
+            <span class="section-index">02</span>
+            <h2 id="summary-title">训练摘要</h2>
+          </div>
+          <div class="metric-grid">
+            <article class="metric">
+              <span>实际词表</span>
+              <strong id="metric-vocab">—</strong>
+              <small id="metric-vocab-context">—</small>
+            </article>
+            <article class="metric">
+              <span>学习到的 merges</span>
+              <strong id="metric-merges">—</strong>
+              <small>每条规则生成一个新 token</small>
+            </article>
+            <article class="metric">
+              <span>训练 token 数</span>
+              <strong id="metric-tokens">—</strong>
+              <small id="metric-token-context">—</small>
+            </article>
+            <article class="metric">
+              <span>训练压缩比</span>
+              <strong id="metric-ratio">—</strong>
+              <small id="metric-reduction">—</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="trace-title">
+          <div class="panel-header trace-header">
+            <div>
+              <span class="section-index">03</span>
+              <h2 id="trace-title">逐轮 merge trace</h2>
+            </div>
+            <div class="step-controls">
+              <button id="previous-step" class="button button-quiet" type="button" disabled>上一轮</button>
+              <label for="step-range" class="sr-only">选择 merge 轮次</label>
+              <input id="step-range" type="range" min="1" max="1" value="1" disabled>
+              <button id="next-step" class="button button-quiet" type="button" disabled>下一轮</button>
+            </div>
+          </div>
+
+          <div class="step-meta">
+            <strong id="step-label">—</strong>
+            <span id="step-token-count">—</span>
+          </div>
+
+          <div id="merge-rule" class="merge-rule" aria-live="polite">—</div>
+
+          <div class="sequence-grid">
+            <section class="sequence-block" aria-labelledby="before-title">
+              <h3 id="before-title">合并前</h3>
+              <div id="before-sequences" class="sample-list"></div>
+            </section>
+            <section class="sequence-block" aria-labelledby="after-title">
+              <h3 id="after-title">合并后</h3>
+              <div id="after-sequences" class="sample-list"></div>
+            </section>
+          </div>
+
+          <section class="pair-section" aria-labelledby="pairs-title">
+            <div class="subsection-heading">
+              <h3 id="pairs-title">本轮 pair 频率</h3>
+              <span id="pair-count-note"></span>
+            </div>
+            <div id="pair-list" class="pair-list"></div>
+          </section>
+        </section>
+
+        <div id="invariant-checks" class="invariant-row" aria-live="polite"></div>
+      </div>
+    </main>
+
+    <main
+      id="encoder-view"
+      class="shell page-stack"
+      role="tabpanel"
+      aria-labelledby="encoder-tab"
+      data-tokenizer-view
+      hidden
+    >
+      <section class="panel controls-panel" aria-labelledby="encoder-controls-title">
+        <div class="panel-header">
+          <div>
+            <span class="section-index">01</span>
+            <h2 id="encoder-controls-title">使用固定 Tokenizer 编码</h2>
+          </div>
+          <span id="encoder-source-label" class="source-label">等待调用 bpe.py</span>
+        </div>
+
+        <p id="encoder-context" class="encoder-context">
+          请先在 BPE 构建页训练一次。这里只接收已经确定的有序 merge 规则。
+        </p>
+
+        <form id="encoder-form" class="encoder-form">
+          <label class="field" for="encoder-text-input">
+            <span>待编码 string</span>
+            <small>这个 string 不参与训练；Encoder 不会在这里重新统计或选择 pair。</small>
+            <textarea id="encoder-text-input" rows="4" spellcheck="false">banana 你好</textarea>
+          </label>
+          <div class="form-actions">
+            <button id="encode-button" class="button button-primary" type="submit">
+              按固定顺序编码
+            </button>
+            <span id="encoder-request-status" class="status-line" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+      </section>
+
+      <div id="encoder-error-message" class="alert" role="alert" hidden></div>
+
+      <div id="encoder-results" class="page-stack" hidden>
+        <section aria-labelledby="encoder-summary-title">
+          <div class="section-heading">
+            <span class="section-index">02</span>
+            <h2 id="encoder-summary-title">编码摘要</h2>
+          </div>
+          <div class="metric-grid">
+            <article class="metric">
+              <span>UTF-8 bytes</span>
+              <strong id="encoder-metric-bytes">—</strong>
+              <small>最初的 byte token 数</small>
+            </article>
+            <article class="metric">
+              <span>输出 token</span>
+              <strong id="encoder-metric-tokens">—</strong>
+              <small id="encoder-metric-reduction">—</small>
+            </article>
+            <article class="metric">
+              <span>检查规则</span>
+              <strong id="encoder-metric-rules">—</strong>
+              <small>严格按训练顺序逐条检查</small>
+            </article>
+            <article class="metric">
+              <span>实际命中</span>
+              <strong id="encoder-metric-applied">—</strong>
+              <small id="encoder-metric-operations">—</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="encoder-trace-title">
+          <div class="panel-header trace-header">
+            <div>
+              <span class="section-index">03</span>
+              <h2 id="encoder-trace-title">按顺序重放 merge rules</h2>
+            </div>
+            <div class="step-controls">
+              <button id="encoder-previous-step" class="button button-quiet" type="button" disabled>上一条</button>
+              <label for="encoder-step-range" class="sr-only">选择 merge 规则</label>
+              <input id="encoder-step-range" type="range" min="1" max="1" value="1" disabled>
+              <button id="encoder-next-step" class="button button-quiet" type="button" disabled>下一条</button>
+            </div>
+          </div>
+
+          <div class="step-meta">
+            <strong id="encoder-step-label">—</strong>
+            <span id="encoder-step-count">—</span>
+          </div>
+
+          <div id="encoder-merge-rule" class="merge-rule" aria-live="polite">—</div>
+          <p id="encoder-rule-note" class="encoder-rule-note">—</p>
+
+          <div class="sequence-grid">
+            <section class="sequence-block" aria-labelledby="encoder-before-title">
+              <h3 id="encoder-before-title">应用规则前</h3>
+              <div id="encoder-before-sequence" class="sample-list"></div>
+            </section>
+            <section class="sequence-block" aria-labelledby="encoder-after-title">
+              <h3 id="encoder-after-title">应用规则后</h3>
+              <div id="encoder-after-sequence" class="sample-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="encoder-output-title">
+          <div class="panel-header">
+            <div>
+              <span class="section-index">04</span>
+              <h2 id="encoder-output-title">最终 int 列表</h2>
+            </div>
+            <span id="encoder-output-ratio" class="encoding-summary">—</span>
+          </div>
+          <pre id="encoder-output-list" class="encoder-output-list">[]</pre>
+          <div id="encoder-final-tokens" class="sample-list"></div>
+        </section>
+
+        <div id="encoder-invariant-checks" class="invariant-row" aria-live="polite"></div>
+      </div>
+    </main>
+
+    <main
+      id="decoder-view"
+      class="shell page-stack"
+      role="tabpanel"
+      aria-labelledby="decoder-tab"
+      data-tokenizer-view
+      hidden
+    >
+      <section class="panel controls-panel" aria-labelledby="decoder-controls-title">
+        <div class="panel-header">
+          <div>
+            <span class="section-index">01</span>
+            <h2 id="decoder-controls-title">使用 Encoder 的词表解码</h2>
+          </div>
+          <span id="decoder-source-label" class="source-label">等待调用 bpe.py</span>
+        </div>
+
+        <p id="decoder-context" class="decoder-context">
+          请先在 Encoder 页运行一次。Encoder 的 int 列表会自动填入这里。
+        </p>
+
+        <form id="decoder-form" class="decoder-form">
+          <label class="field" for="decoder-token-input">
+            <span>待解码 int 列表</span>
+            <small>使用 JSON int 数组；常见的 Python int list 写法与它相同。每个 id 必须存在于当前 BPE 词表。</small>
+            <textarea id="decoder-token-input" rows="4" spellcheck="false">[]</textarea>
+          </label>
+          <div class="form-actions">
+            <button id="decode-button" class="button button-primary" type="submit">
+              用当前词表解码
+            </button>
+            <span id="decoder-request-status" class="status-line" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+      </section>
+
+      <div id="decoder-error-message" class="alert" role="alert" hidden></div>
+
+      <div id="decoder-results" class="page-stack" hidden>
+        <section aria-labelledby="decoder-summary-title">
+          <div class="section-heading">
+            <span class="section-index">02</span>
+            <h2 id="decoder-summary-title">解码摘要</h2>
+          </div>
+          <div class="metric-grid">
+            <article class="metric">
+              <span>输入 token</span>
+              <strong id="decoder-metric-tokens">—</strong>
+              <small>int id 数量</small>
+            </article>
+            <article class="metric">
+              <span>展开 bytes</span>
+              <strong id="decoder-metric-bytes">—</strong>
+              <small>拼接后的 UTF-8 byte 数</small>
+            </article>
+            <article class="metric">
+              <span>Python len(str)</span>
+              <strong id="decoder-metric-length">—</strong>
+              <small>Unicode code point 数</small>
+            </article>
+            <article class="metric">
+              <span>当前词表</span>
+              <strong id="decoder-metric-vocab">—</strong>
+              <small>基础 byte + learned tokens</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="decoder-pipeline-title">
+          <div class="panel-header">
+            <div>
+              <span class="section-index">03</span>
+              <h2 id="decoder-pipeline-title">Decoder 数据流</h2>
+            </div>
+            <span class="pipeline-label">ids → bytes → UTF-8(replace) → str</span>
+          </div>
+
+          <div class="decoder-pipeline">
+            <section class="decoder-stage" aria-labelledby="decoder-tokens-title">
+              <h3 id="decoder-tokens-title">1. 词表查找</h3>
+              <p>每个 int id 映射到一段原始 bytes。</p>
+              <div id="decoder-token-sequence" class="sample-list"></div>
+            </section>
+
+            <div class="pipeline-arrow" aria-hidden="true">↓ 按输入顺序拼接</div>
+
+            <section class="decoder-stage" aria-labelledby="decoder-bytes-title">
+              <h3 id="decoder-bytes-title">2. 完整 byte stream</h3>
+              <p>不能逐 token 解码；一个 Unicode 字符可能跨越多个 token。</p>
+              <code id="decoder-byte-stream" class="byte-stream">—</code>
+            </section>
+
+            <div class="pipeline-arrow" aria-hidden="true">↓ UTF-8 decode(errors="replace")</div>
+
+            <section class="decoder-stage output-stage" aria-labelledby="decoder-output-title">
+              <h3 id="decoder-output-title">3. 返回的 Python string</h3>
+              <p>非法或不完整的 UTF-8 会变成 U+FFFD（�）；带引号展示便于看清边界。</p>
+              <pre id="decoder-output" class="decoded-output">—</pre>
+            </section>
+          </div>
+
+          <p id="decoder-replacement-note" class="replacement-note"></p>
+          <p id="decoder-canonical-note" class="canonical-note"></p>
+        </section>
+
+        <div id="decoder-invariant-checks" class="invariant-row" aria-live="polite"></div>
+      </div>
+    </main>
+
+    <footer class="shell footer">
+      本地只读展示层 · 默认仅监听 127.0.0.1
+    </footer>
+
+    <script type="module" src="/scripts/app.js"></script>
+  </body>
+</html>

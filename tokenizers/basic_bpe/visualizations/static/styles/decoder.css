@@ -1,0 +1,119 @@
+/* Decoder view 专属样式；颜色、间距和通用组件复用 system.css。 */
+
+.decoder-context {
+  margin: var(--space-5) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 var(--radius-small) var(--radius-small) 0;
+  color: var(--text-muted);
+  background: var(--primary-soft);
+}
+
+.decoder-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.decoder-form .field textarea {
+  min-height: 104px;
+}
+
+.decoder-form .form-actions {
+  grid-column: auto;
+}
+
+.pipeline-label,
+.byte-stream,
+.decoded-output {
+  font-family: var(--font-mono);
+}
+
+.pipeline-label {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.decoder-pipeline {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.decoder-stage {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+  background: var(--surface-subtle);
+}
+
+.decoder-stage > p {
+  margin: var(--space-1) 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.pipeline-arrow {
+  color: var(--primary-strong);
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.byte-stream {
+  display: block;
+  max-height: 220px;
+  padding: var(--space-3);
+  overflow: auto;
+  border-radius: var(--radius-small);
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: 0.8rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.output-stage {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--line));
+  background: color-mix(in srgb, var(--primary-soft) 55%, var(--surface));
+}
+
+.decoded-output {
+  min-height: 72px;
+  margin: 0;
+  padding: var(--space-4);
+  overflow: auto;
+  border-radius: var(--radius-small);
+  color: var(--text);
+  background: var(--surface-raised);
+  font-size: clamp(1rem, 2.4vw, 1.3rem);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.replacement-note,
+.canonical-note {
+  margin: var(--space-4) 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-small);
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  font-size: 0.86rem;
+}
+
+.replacement-note.is-used {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.canonical-note.is-noncanonical {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+@media (max-width: 820px) {
+  .pipeline-label {
+    white-space: normal;
+  }
+}

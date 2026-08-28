@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="展示 Unicode 预切分、protected character barrier 与 byte-level BPE 的本地实验界面。"
+    >
+    <title>Split-aware BPE 实验室</title>
+    <link rel="stylesheet" href="/styles/split.css">
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="shell masthead__inner">
+        <div>
+          <p class="eyebrow">ZNBC Tokenizer · Variant 02</p>
+          <h1 id="page-title">Split-aware BPE</h1>
+          <p class="masthead__description">
+            先按 split 策略建立边界，再构建词表、encode 和 decode。
+          </p>
+        </div>
+        <span class="strategy-badge">unicode-category-protected-v1</span>
+      </div>
+    </header>
+
+    <main class="shell page-stack" aria-labelledby="page-title">
+      <ol class="pipeline" aria-label="实验流程">
+        <li><span>01</span><strong>构建词表</strong></li>
+        <li><span>02</span><strong>Encode 示例</strong></li>
+        <li><span>03</span><strong>Decode 检查</strong></li>
+      </ol>
+
+      <form id="experiment-form" class="panel experiment">
+        <section class="form-stage" aria-labelledby="build-config-title">
+          <div class="stage-heading">
+            <span class="stage-number">01</span>
+            <div>
+              <h2 id="build-config-title">构建词表</h2>
+              <p>每行 corpus 是独立 sample；所有 merge 都限制在 split piece 内。</p>
+            </div>
+          </div>
+
+          <div class="builder-grid">
+            <label class="field" for="corpus-input">
+              <span>训练 corpus</span>
+              <small>每行一个 sample，最多 200 行。</small>
+              <textarea id="corpus-input" rows="5" spellcheck="false">dog.dog.
+dog?dog?
+dog dog
+abab|abab
+你好。你好。</textarea>
+            </label>
+
+            <div class="config-stack">
+              <label class="field" for="vocab-input">
+                <span>目标词表大小</span>
+                <small>包含最初的 256 个 byte ids。</small>
+                <input id="vocab-input" type="number" min="256" max="1024" value="272">
+              </label>
+
+              <label class="field" for="protected-input">
+                <span>Protected characters</span>
+                <small id="protected-note">
+                  按 code point 配置；每次出现都单独成 piece，自身及左右均不 merge。
+                </small>
+                <textarea id="protected-input" rows="2" spellcheck="false" aria-describedby="protected-note"></textarea>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-stage example-stage" aria-labelledby="example-config-title">
+          <div class="stage-heading">
+            <span class="stage-number">02→03</span>
+            <div>
+              <h2 id="example-config-title">运行 Encode / Decode 示例</h2>
+              <p>示例文本不参与训练，直接复用上面构建的词表与 split 策略。</p>
+            </div>
+          </div>
+
+          <label class="field" for="text-input">
+            <span>示例 string</span>
+            <textarea id="text-input" rows="3" spellcheck="false">dog.dog? dog | 你好🙂
+next line</textarea>
+          </label>
+        </section>
+
+        <div class="form-actions">
+          <button id="run-button" class="primary-button" type="submit">
+            构建词表并运行示例
+          </button>
+          <span id="request-status" class="status" role="status" aria-live="polite">准备就绪</span>
+        </div>
+        <div id="error-message" class="error" role="alert" hidden></div>
+      </form>
+
+      <div id="results" class="page-stack" hidden>
+        <section id="training-stage" class="result-stage" data-stage="training" aria-labelledby="summary-title">
+          <div class="section-heading">
+            <div class="stage-heading">
+              <span class="stage-number">01</span>
+              <div>
+                <h2 id="summary-title">词表已构建</h2>
+                <p>训练统计与当前生效的 split 策略。</p>
+              </div>
+            </div>
+            <span id="source-label" class="source-label">等待 Python adapter</span>
+          </div>
+
+          <div class="metrics" aria-label="训练摘要">
+            <article class="metric">
+              <span>实际词表</span>
+              <strong id="metric-vocab">—</strong>
+              <small id="metric-vocab-note">—</small>
+            </article>
+            <article class="metric">
+              <span>学习 merge</span>
+              <strong id="metric-merges">—</strong>
+              <small>只来自 mergeable pieces</small>
+            </article>
+            <article class="metric">
+              <span>Split pieces</span>
+              <strong id="metric-pieces">—</strong>
+              <small id="metric-pieces-note">—</small>
+            </article>
+            <article class="metric">
+              <span>训练压缩比</span>
+              <strong id="metric-compression">—</strong>
+              <small id="metric-compression-note">—</small>
+            </article>
+          </div>
+
+          <article class="panel strategy-panel" aria-labelledby="policy-title">
+            <div class="strategy-heading">
+              <div>
+                <p class="section-label">Split policy</p>
+                <h3 id="policy-title">Protected 是 barrier</h3>
+              </div>
+              <span id="policy-id" class="strategy-badge">—</span>
+            </div>
+            <p class="barrier-statement">
+              Protected character 每次单独成 piece，并设置
+              <code>merge_allowed = false</code>；不会与左右相邻内容合并，自身的 UTF-8 bytes 也不会合并。
+            </p>
+            <div id="protected-list" class="protected-list"></div>
+            <p id="protected-omitted-note" class="omitted-note" hidden></p>
+
+            <details id="strategy-details" class="inline-details">
+              <summary>查看 regex 与类别规则</summary>
+              <div class="details-body">
+                <p id="protected-raw" class="muted"></p>
+                <div class="regex-stack">
+                  <div>
+                    <span>Step A · protected regex</span>
+                    <code id="protected-pattern">—</code>
+                  </div>
+                  <div>
+                    <span>Step B · category regex</span>
+                    <code id="category-pattern">—</code>
+                  </div>
+                </div>
+                <div id="policy-rules" class="policy-rules"></div>
+              </div>
+            </details>
+          </article>
+
+          <div class="detail-stack">
+            <details id="training-details" class="panel disclosure">
+              <summary>
+                <span>
+                  <small>Training boundaries</small>
+                  <strong id="training-splits-title">查看训练文本的 split pieces</strong>
+                </span>
+                <span id="training-count-label" class="summary-meta">—</span>
+              </summary>
+              <div class="disclosure-body">
+                <div class="legend">
+                  <span><i></i>可 merge</span>
+                  <span><i class="legend__protected"></i>protected</span>
+                </div>
+                <div id="training-samples" class="sample-stack"></div>
+                <p id="training-omitted-note" class="omitted-note" hidden></p>
+              </div>
+            </details>
+
+            <details id="merge-details" class="panel disclosure">
+              <summary>
+                <span>
+                  <small>Vocabulary</small>
+                  <strong id="merges-title">查看 merge rules</strong>
+                </span>
+                <span id="merge-count-label" class="summary-meta">—</span>
+              </summary>
+              <div class="disclosure-body">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Rank</th>
+                        <th>Pair</th>
+                        <th>New id</th>
+                        <th>Frequency</th>
+                        <th>Bytes / text</th>
+                      </tr>
+                    </thead>
+                    <tbody id="merge-rows"></tbody>
+                  </table>
+                </div>
+                <p id="merge-omitted-note" class="omitted-note" hidden></p>
+                <p id="no-merges" class="empty-state" hidden>
+                  当前边界内没有可学习的相邻 pair，词表提前停止增长。
+                </p>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section id="encoding-stage" class="panel result-stage" data-stage="encoding" aria-labelledby="encoding-title">
+          <div class="section-heading">
+            <div class="stage-heading">
+              <span class="stage-number">02</span>
+              <div>
+                <h2 id="encoding-title">Encode</h2>
+                <p>先 split，再分别对允许 merge 的 piece 应用词表。</p>
+              </div>
+            </div>
+            <span id="encoding-ratio" class="source-label">—</span>
+          </div>
+          <div id="encoding-pieces" class="piece-strip"></div>
+          <p id="encoding-omitted-note" class="omitted-note" hidden></p>
+          <div class="code-output">
+            <h3>最终 token ids</h3>
+            <pre id="token-output">[]</pre>
+          </div>
+        </section>
+
+        <section id="decoding-stage" class="panel result-stage" data-stage="decoding" aria-labelledby="decoding-title">
+          <div class="stage-heading">
+            <span class="stage-number">03</span>
+            <div>
+              <h2 id="decoding-title">Decode</h2>
+              <p>把 token bytes 拼回 UTF-8 string，并检查 round-trip。</p>
+            </div>
+          </div>
+          <div class="code-output decoded-output">
+            <h3>Decoded string</h3>
+            <pre id="decoded-output"></pre>
+          </div>
+          <div id="invariant-list" class="invariant-list" aria-label="核心不变量"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="shell footer">
+      split、训练、encode 与 decode 均由同目录 Python 实现完成。
+    </footer>
+
+    <script type="module" src="/scripts/split-app.js"></script>
+  </body>
+</html>
