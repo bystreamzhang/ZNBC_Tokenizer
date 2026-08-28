@@ -105,5 +105,5 @@ bash -n visualizations/run.sh
 ## 参考
 
 - GPT-2 官方实现：<https://github.com/openai/gpt-2/blob/master/src/encoder.py>
-- GPT-2 论文 `2.2 Input Representation：
+- GPT-2 论文 `2.2 Input Representation`：
   <https://cdn.openai.com/better-language-models/language-models.pdf>

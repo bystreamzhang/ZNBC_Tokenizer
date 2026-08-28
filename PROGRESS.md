@@ -9,8 +9,8 @@
     - 已支持输出 byte/token 长度、节省 token 数、压缩比和可选 token sequence
     - 已明确多个训练样本的边界和相同频率时的确定性规则
     - 已添加单元测试和命令行演示
-    - 已将 `bpe.py` 的注释和 docstring 改为更具体的中文说明
-    - 已新增集中在 `visualizations/` 的本地浏览器界面；页面通过 Python adapter 调用当前 `bpe.py`，核心算法不依赖展示代码
+    - 已将 `tokenizers/basic_bpe/bpe.py` 的注释和 docstring 改为更具体的中文说明
+    - 已新增集中在 `tokenizers/basic_bpe/visualizations/` 的本地浏览器界面；页面通过 Python adapter 调用同 variant 的 `bpe.py`，核心算法不依赖展示代码
     - 已定义可复用的页面风格、view/adapter 目录约定和固定启动脚本
 
 2. Byte-level BPE decoder
@@ -38,3 +38,4 @@
     - 已新增独立本地前端，展示实际 protected/category regex、Unicode code points、ordered pieces、offset、bytes、piece 内 tokens、merge rules 和 round-trip 不变量
     - 已为基础存档、新 splitter、新 BPE 核心与新版 adapter/static routes 添加回归测试
     - 已将 split-aware 前端重构为 `构建词表 → Encode → Decode` 的紧凑单列流程；策略细节与大规模结果默认折叠，并完成桌面及窄屏响应式预览
+    - 已完成 variant 迁移并删除根目录重复的 `bpe.py`、`tests/` 与 `visualizations/`；可运行入口统一位于 `tokenizers/basic_bpe/` 和 `tokenizers/split_bpe/`
