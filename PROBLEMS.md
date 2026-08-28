@@ -3,14 +3,21 @@
 - 一个string，分词之后未必是同一个token
 - 同一个string，分词后可能属于不同token，典型比如句首的，以及句中的，句中可能多一个空格就变成了新token
 - 对于english以外的语言，同样的内容，划分token数量可能更多，会增加上下文长度，从而影响生成效果
-- 对于GPT2，连续空格中，可能每个空格都是一个相同token，上下文很长；也降低了代码能力
+- 【OK】对于GPT2，连续空格中，可能每个空格都是一个相同token，上下文很长；也降低了代码能力
     - GPT4 特意增加了一些连续空格构成的token（优化了分词器）从而提升代码能力
 - 增加token种类，可以减少上下文占用；但增加token会导致嵌入表增大等问题；可以找到一个sweet pot
 
-- 为什么不能直接用unicode表作为词汇表？因为太大了；并且规范还在改变。有更好的东西：`encodings`。
+- 【OK】为什么不能直接用unicode表作为词汇表？因为太大了；并且规范还在改变。有更好的东西：`encodings`。
     - unicode 的UTF-8比较合适，相当于每个token是[0, 255]，一个unicode会被拆分为多个token，词汇表就比较小
     - 不过词汇表小，上下文就可能比较长；需要用Byte pair encoding
 
-- 关于理解层面的一个问题。LLM和Tokenizer其实是完全独立的两个模块，有不同的训练集。只是Tokenizer的输出可以作为LLM的输入，并且效果一般会比直接输入raw text要更好（我们解决了一些问题比如通过分词获得了合适的词汇表大小），而且一些特殊训练的Tokenizer可以使得对应训练的LLM在某些方面效果更好。
+- 【OK】关于理解层面的一个问题。LLM和Tokenizer其实是完全独立的两个模块，有不同的训练集。只是Tokenizer的输出可以作为LLM的输入，并且效果一般会比直接输入raw text要更好（我们解决了一些问题比如通过分词获得了合适的词汇表大小），而且一些特殊训练的Tokenizer可以使得对应训练的LLM在某些方面效果更好。
 
+- 【OK】并非每个 UTF-8 byte 值都能独立解码成字符；例如 128（`0x80`）是 continuation byte，不能作为有效 UTF-8 sequence 的首 byte。解码非法或不完整的 byte sequence 时可使用 `errors="replace"` 输出 U+FFFD（�）
 
+---
+分词器优化：
+
+- GPT2论文提到一个问题，BPE算法会把一些不该merge的merge，比如`dog.`, `dog?` ,`dog `等。怎么避免一些不应该发生的merge？——split
+
+---

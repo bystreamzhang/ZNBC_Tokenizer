@@ -12,7 +12,18 @@
 - [x] byte-level Byte Pair Encoding 训练
 - [x] 使用训练得到的 merge 编码新 string
 - [x] 输出长度、token sequence（可选）和压缩信息
-- [ ] decode：从 token sequence 恢复原 string
+- [x] decode：从 token sequence 恢复原 string
 - [ ] 保存和加载训练好的 vocabulary / merge rules
 - [x] 基于当前 Python BPE 实现的本地浏览器可视化界面
 - [ ] 后续 tokenizer 功能沿用 `visualizations/` 的 adapter/view/style 约定增加展示
+- [x] 将 BPE 构建与 Encoder 使用阶段拆开，并展示有序 merge 的级联过程
+
+分词器边界优化：
+
+- [x] 存档当前基础 byte-level BPE 与对应可运行前端
+- [x] 在独立目录实现训练/编码共用的 regex pre-tokenization
+- [x] 支持配置永远不参与 merge 的 protected Unicode characters
+- [x] 前端展示当前 split policy 与每个实际 split piece
+- [x] 覆盖 ASCII/Unicode/连续分隔符/换行/正则元字符与对抗 merge 测试
+- [ ] 后续考虑以 longest-match 支持多 code point protected literals
+- [ ] 后续评估是否用第三方 `regex` 的 Unicode properties 替换标准库 `re` 近似
