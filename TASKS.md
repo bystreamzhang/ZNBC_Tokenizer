@@ -35,3 +35,11 @@ tiktoken GPT-4 对照实现：
 - [x] 提供 Python API、JSON CLI、独立 README、依赖与使用方法
 - [x] 提供风格一致的本地前端，展示 token ids、bytes 与 decode round-trip
 - [x] 覆盖普通文本、Unicode、emoji、special-token 字面量、无效 id 与前端安全回归测试
+
+自研 GPT-4 tokenizer：
+
+- [x] 实现 Basic / Regex BPE 的 `train()`、encode、decode 与 GPT-4 regex 边界
+- [x] 恢复 cl100k merges 和 byte shuffle，并验证与 tiktoken golden 一致
+- [x] 支持常见 special tokens 及 allowed/disallowed 策略
+- [x] 提供 JSON CLI、独立双模式前端和完整测试说明
+- [x] 覆盖核心、前端安全及既有 tokenizer variants 回归测试

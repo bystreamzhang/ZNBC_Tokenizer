@@ -14,3 +14,4 @@
 - Base BPE: 见 [tokenizers/basic_bpe/README.md](tokenizers/basic_bpe/README.md)
 - Split-aware BPE: 见 [tokenizers/split_bpe/README.md](tokenizers/split_bpe/README.md)
 - GPT-4（tiktoken）：见 [tokenizers/tiktoken_gpt4/README.md](tokenizers/tiktoken_gpt4/README.md)
+- GPT-4（自研）：见 [tokenizers/own_gpt4/README.md](tokenizers/own_gpt4/README.md)

@@ -45,5 +45,8 @@ GPT2论文提到一个问题，BPE算法会把一些不该merge的merge，比如
 ## tiktoken
 我了解到有一个开源的tiktoken库，直接包含了gpt-4分词器的代码，考虑利用tiktoken提供的功能，做一个简单的分词器。和已有的basic_bpe和split_aware_bpe类似，也有风格一致的前端，并且名称就叫tiktoken-gpt-4类似的名字。应该是比较简单的，不需要解决什么新问题，应该只需要写比较少的代码，能调用tiktoken的就调用。同样要在@tokenizers文件夹创建独立的文件夹并且有独立的README和使用方法。不要随意修改已有的内容。
 
-## special tokens
+我检查了一下没什么问题，可以进行git提交。根目录的文档也可以检查一下然后顺便提交，包括PROMPTS.md，README.md和AGENTS.md等。
 
+## own_gpt4_tokenizer
+
+现在我要参考@tokenizers/own_gpt4/exercise.md，在@tokenizers/own_gpt4做自己的gpt4分词器。需要你制定计划。首先是实现代码，跑通测试，然后实现一个独立前端并写文档告诉我怎么测，流程和规范和已有的3个分词器类似。并且我希望增加special tokens处理，如step 4所说。加几个简单常见的special token即可。代码需要有适当的中文注释。要实现一个`train()`函数。如果遇到问题，可以参考@https://github.com/karpathy/minbpe/tree/master 库的已有实现，这个库已经有一套标准答案，但不建议一开始就参考。最后简要修改PROGRESS.md和TASKS.md。

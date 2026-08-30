@@ -48,3 +48,11 @@
     - 已为无效/空洞 token id、输入限制、API 状态码、静态目录穿越、CSP/no-store、响应式布局与启动脚本添加回归测试
     - 已固定并验证 `tiktoken==0.14.0`，记录首次加载 encoding 数据需要联网及 `TIKTOKEN_CACHE_DIR` 缓存约定
     - 当前可运行 variant 已扩展为 `basic_bpe`、`split_bpe` 与 `tiktoken_gpt4`；上文 1～3 仍由 `basic_bpe` 存档复现
+
+6. 自研 GPT-4 tokenizer（exercise Step 1～4）
+    - 已在 `tokenizers/own_gpt4/` 实现可训练的 `BasicTokenizer` 与 GPT-4 regex `RegexTokenizer`，包含确定性 `train()`、encode 和 decode
+    - 已从 `cl100k_base` ranks 自行恢复 100,000 条 merges 与 byte shuffle；实际编解码不委托 tiktoken
+    - 已支持 5 个常见 cl100k special tokens，以及默认拒绝、显式允许和普通字面量三类策略
+    - 已提供 JSON CLI、双模式独立本地前端和中文使用/测试文档；页面展示真实 special/regex pieces、merge、token bytes 与 golden 对照
+    - 已通过 45 项核心测试、16 项前端测试及三个既有 variant 的完整回归测试
+    - 当前可运行 variant 已扩展为 `basic_bpe`、`split_bpe`、`tiktoken_gpt4` 与 `own_gpt4`
