@@ -28,3 +28,10 @@
 - [x] 删除迁移后的根目录重复实现，每个 tokenizer variant 独立维护核心、测试与 `visualizations/`
 - [ ] 后续考虑以 longest-match 支持多 code point protected literals
 - [ ] 后续评估是否用第三方 `regex` 的 Unicode properties 替换标准库 `re` 近似
+
+tiktoken GPT-4 对照实现：
+
+- [x] 在独立 variant 中直接调用 tiktoken 的 GPT-4 / `cl100k_base` tokenizer
+- [x] 提供 Python API、JSON CLI、独立 README、依赖与使用方法
+- [x] 提供风格一致的本地前端，展示 token ids、bytes 与 decode round-trip
+- [x] 覆盖普通文本、Unicode、emoji、special-token 字面量、无效 id 与前端安全回归测试

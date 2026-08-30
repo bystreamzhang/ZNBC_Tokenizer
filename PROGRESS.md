@@ -39,3 +39,12 @@
     - 已为基础存档、新 splitter、新 BPE 核心与新版 adapter/static routes 添加回归测试
     - 已将 split-aware 前端重构为 `构建词表 → Encode → Decode` 的紧凑单列流程；策略细节与大规模结果默认折叠，并完成桌面及窄屏响应式预览
     - 已完成 variant 迁移并删除根目录重复的 `bpe.py`、`tests/` 与 `visualizations/`；可运行入口统一位于 `tokenizers/basic_bpe/` 和 `tokenizers/split_bpe/`
+
+5. tiktoken GPT-4 tokenizer（固定官方词表对照）
+    - 已新增独立的 `tokenizers/tiktoken_gpt4/`，固定通过 `tiktoken.encoding_for_model("gpt-4")` 使用 `cl100k_base`，不复制或重新实现 BPE、merge ranks 与词表
+    - 已提供 `GPT4Tokenizer` 的 `encode`、`decode`、`token_bytes`、`analyze` 与 JSON CLI；普通输入使用 `encode_ordinary`，special-token 字面量不会被当作控制 token
+    - 已展示每个 token 的 id、UTF-8 byte offset、原始 bytes、hex 与安全文本，并验证 bytes 重建和 Unicode / emoji / 换行 decode round-trip
+    - 已新增风格一致的独立本地前端，明确展示 `gpt-4 → cl100k_base`、raw-text 统计范围、完整 token ids 与最多 300 项逐 token 明细
+    - 已为无效/空洞 token id、输入限制、API 状态码、静态目录穿越、CSP/no-store、响应式布局与启动脚本添加回归测试
+    - 已固定并验证 `tiktoken==0.14.0`，记录首次加载 encoding 数据需要联网及 `TIKTOKEN_CACHE_DIR` 缓存约定
+    - 当前可运行 variant 已扩展为 `basic_bpe`、`split_bpe` 与 `tiktoken_gpt4`；上文 1～3 仍由 `basic_bpe` 存档复现
