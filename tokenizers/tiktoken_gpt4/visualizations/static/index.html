@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="使用 tiktoken 展示 GPT-4 的 cl100k_base 编码、token bytes 与 decode round-trip。"
+    >
+    <title>tiktoken GPT-4 分词器</title>
+    <link rel="stylesheet" href="/styles/system.css">
+    <link rel="stylesheet" href="/styles/tiktoken.css">
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="shell masthead__inner">
+        <div>
+          <p class="eyebrow">ZNBC Tokenizer · tiktoken</p>
+          <h1 id="page-title">tiktoken · GPT-4</h1>
+          <p class="masthead__description">
+            固定使用 GPT-4 对应的 cl100k_base，查看真实 token ids 与底层 bytes。
+          </p>
+        </div>
+        <span class="model-badge">gpt-4 → cl100k_base</span>
+      </div>
+    </header>
+
+    <main class="shell page-stack" aria-labelledby="page-title">
+      <ol class="pipeline" aria-label="分词流程">
+        <li><span>01</span><strong>选择固定编码</strong></li>
+        <li><span>02</span><strong>Encode raw text</strong></li>
+        <li><span>03</span><strong>Decode round-trip</strong></li>
+      </ol>
+
+      <aside class="scope-note" aria-label="统计范围说明">
+        <strong>统计范围：raw text</strong>
+        <span>
+          本页不包含 ChatML 或 OpenAI API 消息包装产生的额外 tokens，不能直接用来估算完整请求计费。
+        </span>
+      </aside>
+
+      <form id="tokenizer-form" class="panel experiment">
+        <div class="stage-heading">
+          <span class="stage-number">INPUT</span>
+          <div>
+            <h2 id="input-title">输入要编码的文本</h2>
+            <p>最多 20,000 UTF-8 bytes；特殊 token 字面量按普通文本编码。</p>
+          </div>
+        </div>
+
+        <label class="field" for="text-input">
+          <span>Raw text</span>
+          <textarea id="text-input" rows="6" spellcheck="false">Hello, tiktoken! 你好🙂
+GPT-4 使用 cl100k_base。</textarea>
+        </label>
+
+        <div class="form-actions">
+          <button id="run-button" class="primary-button" type="submit">
+            Encode 并检查 round-trip
+          </button>
+          <span id="request-status" class="status" role="status" aria-live="polite">准备就绪</span>
+        </div>
+        <div id="error-message" class="error" role="alert" hidden></div>
+      </form>
+
+      <div id="results" class="page-stack" hidden>
+        <section id="model-stage" class="result-stage" aria-labelledby="model-title">
+          <div class="section-heading">
+            <div class="stage-heading">
+              <span class="stage-number">01</span>
+              <div>
+                <h2 id="model-title">GPT-4 → cl100k_base</h2>
+                <p>模型映射与词表信息来自 Python tokenizer。</p>
+              </div>
+            </div>
+            <span id="source-label" class="source-label">等待 Python adapter</span>
+          </div>
+
+          <div class="metrics" aria-label="Tokenizer 摘要">
+            <article class="metric">
+              <span>Model</span>
+              <strong id="metric-model">—</strong>
+              <small>tiktoken model mapping</small>
+            </article>
+            <article class="metric">
+              <span>Encoding</span>
+              <strong id="metric-encoding">—</strong>
+              <small>固定编码名称</small>
+            </article>
+            <article class="metric">
+              <span>Vocabulary</span>
+              <strong id="metric-vocab">—</strong>
+              <small>encoding.n_vocab</small>
+            </article>
+            <article class="metric">
+              <span>UTF-8 bytes</span>
+              <strong id="metric-bytes">—</strong>
+              <small>输入的原始字节数</small>
+            </article>
+            <article class="metric">
+              <span>Tokens</span>
+              <strong id="metric-tokens">—</strong>
+              <small>完整 encode 输出</small>
+            </article>
+            <article class="metric">
+              <span>Bytes / token</span>
+              <strong id="metric-bytes-per-token">—</strong>
+              <small id="metric-tokens-per-byte">—</small>
+            </article>
+          </div>
+        </section>
+
+        <section id="encoding-stage" class="panel result-stage" aria-labelledby="encoding-title">
+          <div class="section-heading">
+            <div class="stage-heading">
+              <span class="stage-number">02</span>
+              <div>
+                <h2 id="encoding-title">Encode</h2>
+                <p>逐 token 展示 id、输入 byte offset、原始 bytes、hex 与安全 UTF-8 显示。</p>
+              </div>
+            </div>
+            <span id="encoding-summary" class="source-label">—</span>
+          </div>
+
+          <div id="token-list" class="token-grid" aria-label="逐 token 分析"></div>
+          <p id="token-omitted-note" class="omitted-note" hidden></p>
+
+          <div class="code-output">
+            <h3>完整 token ids</h3>
+            <pre id="token-ids-output">[]</pre>
+          </div>
+        </section>
+
+        <section id="decoding-stage" class="panel result-stage" aria-labelledby="decoding-title">
+          <div class="stage-heading">
+            <span class="stage-number">03</span>
+            <div>
+              <h2 id="decoding-title">Decode round-trip</h2>
+              <p>把完整 token ids 解码，并分别核对 token bytes 和 string。</p>
+            </div>
+          </div>
+          <div class="code-output decoded-output">
+            <h3>Decoded text</h3>
+            <pre id="decoded-output"></pre>
+          </div>
+          <div id="invariant-list" class="invariant-list" aria-label="Round-trip 不变量"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="shell footer">
+      Encode、token byte boundaries 与 decode 均由 Python 中的 GPT4Tokenizer 完成。
+    </footer>
+
+    <script type="module" src="/scripts/app.js"></script>
+  </body>
+</html>
